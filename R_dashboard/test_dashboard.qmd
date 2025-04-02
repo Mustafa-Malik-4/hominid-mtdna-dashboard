@@ -1,0 +1,191 @@
+---
+title: "Visual Comparison of Hominid Mitochondrial Genomes"
+format: "dashboard"
+---
+
+```{r, echo=F}
+library(tidyverse)
+library(ggplot2)
+library(ggdendro)
+library(knitr)
+library(dplyr)
+library(tidyr)
+library(ggrepel)
+library(plotly)
+
+df = read.csv("mtDNA.csv")
+
+edm = read_csv('edm.csv')
+ds_mat = as.matrix(edm)
+ds_mat = ds_mat[, -1]
+
+```
+
+# Page 1
+
+## {.sidebar, width=20%}
+
+Overview:\n
+
+The mitochondrial genome has long been recognized as a proxy for detecting overall genetic similarity among species that are known to be related when large scale computing resources are not available, like if a fellow has a single macbook to work with or something. Two methods for detecting similarity have been used in this project, (1) edit distance, which is essentially the number of indels or SNPs it would take to transform one genetic sequence into another, and (2) principal component analysis, which we use to compare the genomes after creating a feature matrix and extracting two principal components of its approximation, this after partitioning each genome into k-mers (same-length segments). The (unrelated) k-means clustering algorithm is then applied to the PCA plots with k=4, since we would expect to find clusters for Pongo, Gorilla, Pan, and Homo.
+
+Key Findings:
+
+Figure 1 does not reflect an accurate phylogram of the genera in question (Gorilla, Pongo, and Homo have swapped places), but it suggests that the mitochondrial genomes of Gorilla and Pan are highly conserved from the MRCA of Homininae, relative to the genomes of Homo. Analyses specifically targeting coding regions may yield more accurate results. Additionally, the Altai Denisovan has been identified as the outgroup of Homo. This is also inaccurate to actual phylogeny but is a well-documented phenomenon.
+
+Figure 2 shows that the mtDNA of members of Pan are still the closest ones to humans, with Gorilla not too far behind, and Pongo the farthest away.
+
+Page 2 shows the results of PCA and clustering. K-mer lengths 5, 6, and 7 yield a graph that very clearly distinguishes each genus and plots them at relatively equidistant triangle with Gorilla in the middle. Results for 8 place Homo much closer to Pan.
+
+
+### Column{width=40%}
+
+
+```{r}
+df2 = df[, c(1, 3, 2)]
+kable(df2)
+```
+
+
+```{r}
+
+names = c('European\nNeanderthal', 'European\nHuman', 'Altai\nDenisovan', 'Sumatran\nOrangutan',
+         'Bornean\nOrangutan', 'Western\nLowland\nGorilla', 'Eastern\nLowland\nGorilla', 'Bonobo',
+         'Chimp\nSchweinfurthii', 'Chimp\nEllioti', 'Chimp\nVerus', 'Chimp\nTroglodytes')
+
+### Hierarchical Clustering
+hc = hclust(as.dist(ds_mat), method = "complete")
+dendro_data = ggdendro::dendro_data(hc)
+dendro_data$labels$label = names
+d = ggplot() +
+  geom_segment(data = dendro_data$segments, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_text(data = dendro_data$labels, aes(x = x, y = y, label = label), 
+            hjust = 1, vjust = 0, angle = 35, size = 2) +
+  theme_minimal() +
+  labs(title = "Figure 1: Hominid mtDNA Dendrogram", x = "Species", y = "Base Pair Edit Distance") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank()) + 
+  coord_cartesian(clip = "off") +
+  theme_gray()
+
+ggplotly(d)
+
+```
+
+### Column{width=40%}
+
+```{r}
+
+data = data.frame(
+  species =  c('European Neanderthal', 'Altai Denisovan', 'Sumatran Orangutan',
+         'Bornean Orangutan', 'Western Lowland Gorilla', 'Eastern Lowland Gorilla', 'Bonobo',
+         'Chimp Schweinfurthii', 'Chimp Ellioti', 'Chimp Verus', 'Chimp Troglodytes'),
+  Genus = c('Homo', 'Homo', 'Pongo', 'Pongo', 'Gorilla', 'Gorilla', 'Pan', 'Pan', 'Pan', 'Pan', 'Pan'),
+  distance = ds_mat[2,][-2]
+)
+
+data = data[order(data$distance, decreasing = TRUE),]
+data$species = factor(data$species, levels = data$species)
+
+g = ggplot(data, aes(x = distance, y = species, fill=Genus)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Figure 2: Edit Distance to Human Mitochondrial Genome", x = "Base Pair Edit Distance", y =    "Species") +
+  scale_fill_manual(values = c('Pongo' = 'darkblue', 'Gorilla' = 'darkgreen', 'Pan' = 'darkorange2', 'Homo'='darkred')) +
+  theme_gray()
+
+ggplotly(g)
+
+```
+
+# Page 2
+
+## {.sidebar, width=20%}
+
+Overview:\n
+
+The mitochondrial genome has long been recognized as a proxy for detecting overall genetic similarity among species that are known to be related when large scale computing resources are not available, like if a fellow has a single macbook to work with or something. Two methods for detecting similarity have been used in this project, (1) edit distance, which is essentially the number of indels or SNPs it would take to transform one genetic sequence into another, and (2) principal component analysis, which we use to compare the genomes after creating a feature matrix and extracting two principal components of its approximation, this after partitioning each genome into k-mers (same-length segments). The (unrelated) k-means clustering algorithm is then applied to the PCA plots with k=4, since we would expect to find clusters for Pongo, Gorilla, Pan, and Homo.
+
+Key Findings:
+
+Figure 1 does not reflect an accurate phylogram of the genera in question (Gorilla, Pongo, and Homo have swapped places), but it suggests that the mitochondrial genomes of Gorilla and Pan are highly conserved from the MRCA of Homininae, relative to the genomes of Homo. Analyses specifically targeting coding regions may yield more accurate results. Additionally, the Altai Denisovan has been identified as the outgroup of Homo. This is also inaccurate to actual phylogeny but is a well-documented phenomenon.
+
+Figure 2 shows that the mtDNA of members of Pan are still the closest ones to humans, with Gorilla not too far behind, and Pongo the farthest away.
+
+Page 2 shows the results of PCA and clustering. K-mer lengths 5, 6, and 7 yield a graph that very clearly distinguishes each genus and plots them at relatively equidistant triangle with Gorilla in the middle. Results for 8 place Homo much closer to Pan.
+
+
+```{r}
+
+kmer_freq = function(seq, k) {
+  ### Segment mtDNA into k-mer substrings of length k
+  kmers = sapply(1:(nchar(seq) - k + 1), function(i) substr(seq, i, i + k - 1))
+  counts = table(kmers)
+  total_kmers = sum(counts)
+  freq <- as.list(counts / total_kmers)
+  return(freq)
+}
+
+PCA = function(k) {
+  df$kmer_freq = lapply(df$mtDNA, function(seq) kmer_freq(seq, k))
+  all_kmers = unique(unlist(lapply(df$kmer_freq, names)))
+
+  ### Feature Matrix
+  kmer_features = as.data.frame(t(sapply(df$kmer_freq, function(kmer_dict) {
+  sapply(all_kmers, function(kmer) ifelse(!is.null(kmer_dict[[kmer]]), kmer_dict[[kmer]], 0))
+  })))
+  colnames(kmer_features) = all_kmers
+  row.names(kmer_features) = df$Species
+  kmer_features_scaled = as.data.frame(scale(kmer_features))
+
+  ### PCA
+  pca_result = prcomp(kmer_features_scaled, center = TRUE, scale. = TRUE)
+  pca_df = as.data.frame(pca_result$x[, 1:2])
+  colnames(pca_df) = c("PC1", "PC2")
+  pca_df$Species = df$Species
+
+  ### K-means Clustering
+  set.seed(0)
+  kmeans_result = kmeans(pca_df[, c("PC1", "PC2")], centers = 4)
+  pca_df$Genus = as.factor(kmeans_result$cluster)
+
+  ggplot(pca_df, aes(x = PC1, y = PC2, color = as.factor(Genus))) +
+    geom_point(size = 3) +
+    geom_text_repel(aes(label = Species), size = 4) +
+    labs(title = paste("PCA for Hominid mtDNA with k-mer length", k),
+        x = "PC1",
+        y = "PC2") +
+    theme_gray() + 
+    theme(legend.position = "none")
+}
+```
+
+### Row
+
+```{r}
+PCA(3)
+```
+
+```{r}
+PCA(6)
+```
+
+### Row
+
+```{r}
+PCA(4)
+```
+
+```{r}
+PCA(7)
+```
+
+### Row
+
+```{r}
+PCA(5)
+```
+
+```{r}
+PCA(8)
+```
+
