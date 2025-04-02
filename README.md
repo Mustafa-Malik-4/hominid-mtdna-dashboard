@@ -6,3 +6,4 @@ If you're unable to do that, watch the video named "python_demo.mp4" to see what
 "R_dashboard" contains all files related to the R implementation of this project.
 To view the dashboard, click the file "test_dashboard.html".
 It should open in your default browser.
+Another method would be opeining "test_dashboard.qmd" in RStudio and rendering it.
